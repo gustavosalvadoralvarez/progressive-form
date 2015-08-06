@@ -1,0 +1,122 @@
+
+<link rel="import" href="../polymer/polymer.html">
+
+
+
+
+<script src="./lib/utils.js"></script>
+
+<!--
+-->
+<dom-module id="progressive-form">
+
+  <style>
+    :host {
+      display: block;
+    }
+    #content > ::content #current {
+      visibility: visible; 
+    }
+    #content > ::content {
+      visibility: hidden;
+    }
+  </style>
+
+  <template>
+    <div id="content">
+      <content></content>
+    </div>
+  </template>
+</dom-module>
+
+<script>
+
+  Polymer({
+
+    is: 'progressive-form',
+
+    properties: {
+      selections: {
+        type: Object,
+        readOnly: true,
+        value: function () { 
+          return {}
+        }
+      },
+      field: {
+        type: Number,
+        readOnly: true,
+        value: 0,
+        observer: 'step'
+      },
+      
+    },
+
+    // Element Lifecycle
+
+    attached: function() {
+      var self; 
+      self = this; 
+      window.addEventListener('WebComponentsReady',
+        function (evnt){ 
+          var fields, lix;
+          fields = utils.Polymer.contained(self); 
+          lix = fields.length -1;
+          fields.forEach(
+            function(fld, i){
+              fld.addEventListener('change',
+                function(evnt){ 
+                  var el, fieldName, selected;
+                  el = evnt.target;
+                  fieldName = el.getAttribute('name'); 
+                  selected = el.value || el.date || fieldName;
+                  console.log(el); 
+                  console.log(selected);
+                  self.addSelection(fieldName, selected);
+                  self.fire('form-selection', { name: fieldName, selected: selected });
+                  if (i < lix){ 
+                     self._setField(i+1);
+                  } else {
+                    self.fire('form-complete', self.selections);
+                  }
+                }
+              );
+            }
+          );
+          self._setField(0);
+        }
+      )
+    },
+
+    addSelection: function(fieldName, selected){ 
+      var self, selections;
+      self = this;
+      selections = self.selections; 
+      selections[fieldName] = selected; 
+      self._setSelections(selections); 
+    },
+
+    step: function (newField, oldField) { 
+      console.log("Form step");
+      console.log(oldField); 
+      console.log(newField);
+      var self, cntnd, curr, prev, selected;
+      self = this;
+      cntnd = utils.Polymer.contained(self); 
+      curr = cntnd[newField];
+      if (newField === 0){ 
+        curr.id = 'current';
+        return
+      }
+      prev = cntnd[oldField]; 
+      // selected = prev.value || prev.selected || prev.date;
+      // self.addSelection(prev.getAttribute('name'), selected);
+      prev.removeAttribute('id');
+      prev.setAttribute('style', "display:none;");
+      curr.id = 'current';
+    }
+   
+
+  });
+
+</script>
